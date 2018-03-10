@@ -3,41 +3,44 @@ package com.zcy.gifmaker;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.lchad.gifflen.Gifflen;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import com.zhihu.matisse.Matisse;
 import com.zhihu.matisse.MimeType;
 import com.zhihu.matisse.engine.impl.GlideEngine;
-import com.zhihu.matisse.filter.Filter;
-import com.zhihu.matisse.internal.entity.CaptureStrategy;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
-import static com.zhihu.matisse.ui.MatisseActivity.GALLERYCHOICE;
+import com.jni.FFmpegJni;
+
 import static com.zhihu.matisse.ui.MatisseActivity.MULTICHOICE;
-import static com.zhihu.matisse.ui.MatisseActivity.SINGLECHOICE;
 
 public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     public static final int REQUEST_CODE_CHOOSE = 23;
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "gif.gif";
+    String res = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "GIFMaker" + File.separator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
                                     switch (v.getId()) {
                                         case R.id.gifmaker:
                                             Matisse.from(MainActivity.this)
-                                                    .choose(MimeType.ofAll(), false)
+                                                    .choose(MimeType.of(MimeType.PNG, MimeType.JPEG), false)
                                                     .countable(true)
                                                     .maxSelectable(9)
                                                     .thumbnailScale(0.85f)
@@ -95,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(MainActivity.this, "开始制作", Toast.LENGTH_SHORT).show();
                     makeGif(Matisse.obtainResult(data));
                 }
             }).start();
@@ -109,8 +111,6 @@ public class MainActivity extends AppCompatActivity {
      */
     private void makeGif(List<Uri> uris) {
         final ImageView imageView = findViewById(R.id.image_view);
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() +
-                File.separator + "gifflen-sample1.gif";
         double finalW = 0;
         double finalH = 0;
 
@@ -118,17 +118,13 @@ public class MainActivity extends AppCompatActivity {
 
         BitmapFactory.Options op = new BitmapFactory.Options();
         op.inJustDecodeBounds = true;
-
+        String sourcePath = null;
         for (int i = 0; i < uris.size(); i++) {
-            String sourcePath = getRealPathFromURI(MainActivity.this, uris.get(i));
+            sourcePath = getRealPathFromURI(MainActivity.this, uris.get(i));
             BitmapFactory.decodeFile(sourcePath, op);
             double ow = op.outWidth;
             double oh = op.outHeight;
             scales[i] = (ow / oh);
-            if (i == 0) {
-                finalH = op.outHeight;
-                finalW = op.outWidth;
-            }
 
         }
 
@@ -143,23 +139,61 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        Gifflen gifflen = new Gifflen.Builder()
-                .color(256)
-                .delay(1000)
-                .quality(10)
-                .width((int) finalW)
-                .height((int) finalH)
-                .listener(new Gifflen.OnEncodeFinishListener() {
-                    @Override
-                    public void onEncodeFinish(String path) {
-                        Toast.makeText(MainActivity.this, "已保存gif到" + path, Toast.LENGTH_LONG).show();
-                        Glide.with(MainActivity.this).load(path).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(imageView);
-                    }
-                })
-                .build();
+        int width = (int) finalW;
+        int height = (int) finalH;
+
+        for (int i = 0; i < uris.size(); i++) {
+            Bitmap bitmap;
+            sourcePath = getRealPathFromURI(MainActivity.this, uris.get(i));
+            if (TextUtils.isEmpty(sourcePath)) {
+                continue;
+            }
+            bitmap = BitmapFactory.decodeFile(sourcePath);
+            Log.e("makeGif: ", "init i = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+            double bScale = bitmap.getWidth() / bitmap.getHeight();
+            double w = bitmap.getWidth() + 1;
+            double h = bitmap.getHeight();
+
+            double dstHeight = h / (w / width);
+            double dstWidth = w / (h / height);
+
+            if (bScale < finalScale) {//比最终高、缩放宽度、裁剪高度
+                bitmap = Bitmap.createScaledBitmap(bitmap, width, (int) dstHeight, true);
+                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+                bitmap = Bitmap.createBitmap(bitmap, 0, (bitmap.getHeight() - height) / 2, width, height);
+                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+            } else if (bScale > finalScale) {//比最终宽、缩放高度、裁剪宽度
+                bitmap = Bitmap.createScaledBitmap(bitmap, (int) dstWidth, height, true);
+                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+                bitmap = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - width) / 2, 0, width, height);
+                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+            } else {
+                bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+                Log.e("makeGif: ", "i = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+            }
+
+            saveBitmap(bitmap, i);
+
+        }
+        String[] commend = FFmpegCommands.photos2Gif(res, path);
+
+        System.out.println(commend.toString());
+
+        FFmpegJni.run(commend);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, "已保存gif到" + path, Toast.LENGTH_LONG).show();
+
+                Glide.with(MainActivity.this).load(path).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(imageView);
+
+                deleteFiles(res);
+
+            }
+        });
 
 
-        gifflen.encode(MainActivity.this, path, uris);
     }
 
     private double getMostAppear(double[] arr) {
@@ -202,5 +236,30 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return "";
+    }
+
+    public void saveBitmap(Bitmap bitmap, int num) {
+        try {
+            File file = new File(res + "temp0" + (num + 1) + ".jpg");
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            }
+            FileOutputStream fos = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            System.out.println("保存成功" + file.getAbsolutePath());
+            fos.flush();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void deleteFiles(String dir) {
+        File file = new File(dir);
+        if (file.exists()) {
+            file.delete();
+        }
     }
 }
