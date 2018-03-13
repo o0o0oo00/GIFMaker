@@ -29,5 +29,3 @@ op.inJustDecodeBounds = true;
 
 裁切完毕。生成GIF。
 
-特别鸣谢！！！
-https://github.com/lchad/Gifflen-Android
