@@ -4,11 +4,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-/**
- * Created by tangyx
- * Date 2017/8/4
- * email tangyx@live.com
- */
+
 
 public class FFmpegCommands {
 
