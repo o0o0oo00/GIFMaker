@@ -220,6 +220,7 @@ public class FFmpegCommands {
      * @return
      */
     public static String[] photos2Gif(String in, String out) {
+        Log.w("SLog", "_filePath:" + in + "\n_outPath:" + out);
         ArrayList<String> _commands = new ArrayList<>();
         _commands.add("ffmpeg");
         //指定输入格式

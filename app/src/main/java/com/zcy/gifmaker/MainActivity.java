@@ -39,7 +39,7 @@ import static com.zhihu.matisse.ui.MatisseActivity.MULTICHOICE;
 public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     public static final int REQUEST_CODE_CHOOSE = 23;
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "gif.gif";
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "test.gif";
     String res = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "GIFMaker" + File.separator;
 
     @Override
@@ -151,27 +151,27 @@ public class MainActivity extends AppCompatActivity {
             bitmap = BitmapFactory.decodeFile(sourcePath);
             Log.e("makeGif: ", "init i = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
             double bScale = bitmap.getWidth() / bitmap.getHeight();
-            double w = bitmap.getWidth() + 1;
+            double w = bitmap.getWidth();
             double h = bitmap.getHeight();
-
+//
             double dstHeight = h / (w / width);
             double dstWidth = w / (h / height);
-
-            if (bScale < finalScale) {//比最终高、缩放宽度、裁剪高度
-                bitmap = Bitmap.createScaledBitmap(bitmap, width, (int) dstHeight, true);
-                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
-                bitmap = Bitmap.createBitmap(bitmap, 0, (bitmap.getHeight() - height) / 2, width, height);
-                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
-            } else if (bScale > finalScale) {//比最终宽、缩放高度、裁剪宽度
-                bitmap = Bitmap.createScaledBitmap(bitmap, (int) dstWidth, height, true);
-                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
-                bitmap = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - width) / 2, 0, width, height);
-                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
-            } else {
-                bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
-                Log.e("makeGif: ", "i = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
-            }
-
+//
+//            if (bScale < finalScale) {//比最终高、缩放宽度、裁剪高度
+//                bitmap = Bitmap.createScaledBitmap(bitmap, width, (int) dstHeight, true);
+//                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+//                bitmap = Bitmap.createBitmap(bitmap, 0, (bitmap.getHeight() - height) / 2, width, height);
+//                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+//            } else if (bScale > finalScale) {//比最终宽、缩放高度、裁剪宽度
+//                bitmap = Bitmap.createScaledBitmap(bitmap, (int) dstWidth, height, true);
+//                Log.e("makeGif: ", "i1 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+//                bitmap = Bitmap.createBitmap(bitmap, (bitmap.getWidth() - width) / 2, 0, width, height);
+//                Log.e("makeGif: ", "i2 = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+//            } else {
+//                bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+//                Log.e("makeGif: ", "i = " + i + " w = " + bitmap.getWidth() + " h = " + bitmap.getHeight());
+//            }
+//
             saveBitmap(bitmap, i);
 
         }
