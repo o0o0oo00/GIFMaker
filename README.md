@@ -32,3 +32,4 @@ op.inJustDecodeBounds = true;
 这里的ffmpeg已经精简编译过了，如果有需要其他的cpu架构可以联系我(￣▽￣)"
 
 
+精简脚本已经上传
